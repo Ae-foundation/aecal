@@ -1,11 +1,20 @@
 # AECAL
 Innovative console calendar based on cal.c from bsd 4.2
 
-## Compile
+## Build
+For compile use:
 ```
 git clone https://github.com/Ae-foundation/aecal
 cd aecal
 make
+```
+For install use:
+```
+make install
+```
+For uninstall use:
+```
+make uninstall
 ```
 
 ## Using
