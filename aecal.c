@@ -43,7 +43,8 @@ pstr(char *str, int n)
 		/* highlighting bit 0x80 */
 		if (str[i] & 0x80)
 #if CURRENT_DAY_FLAG == 1
-			printf("\x1b[47;30m%c\x1b[0m", (str[i] & 0x7f));
+			printf("\x1b" ANSI_HIGHLIGHT "%c\x1b[0m",
+			    (str[i] & 0x7f));
 #else
 			printf("%c", (str[i] & 0x7f));
 #endif
@@ -134,24 +135,25 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 			mon[m] += 11;
 		}
 
+		if (i > 9)
+			*s = i / 10 + '0';
+
 		/* 0x80 bit for highlighting */
 		if (i == cur) {
-			if (i > 9)
-				*s = (i / 10 + '0') | 0x80;
+			if (i < 9)
+				*s = ' ';
 			else
-				*s = (u_char)(' ' | 0x80);
-
-			s++;
-			*s++ = (i % 10 + '0') | 0x80;
-			*s = ' ';
-			s++;
-		} else {
-			if (i > 9)
-				*s = i / 10 + '0';
-			s++;
-			*s++ = i % 10 + '0';
-			s++;
+				*s |= 0x80;
 		}
+
+		*++s = i % 10 + '0';
+
+		if (i == cur) {
+			*s |= 0x80;
+			*++s = ' ';
+			s++;
+		} else
+			s += 2;
 
 		if (++d == 7) {
 			d = 0;
@@ -226,7 +228,7 @@ main(int c, char **av)
 	 * print out just month
 	 */
 xshort:
-	printf("   %s %u\n", smon[m - 1], y);
+	printf("    %s %u\n", smon[m - 1], y);
 	printf("%s\n", dayw);
 
 	cur = (m == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
@@ -247,9 +249,7 @@ xlong:
 	putchar('\n');
 
 	for (i = 0; i < 12; i += 3) {
-		for (j = 0; j < 6 * 72; j++)
-			str[j] = 0;
-
+		memset(str, 0, 432);
 		printf("	 %.3s", smon[i]);
 		printf("\t\t\t%.3s", smon[i + 1]);
 		printf("		       %.3s\n", smon[i + 2]);
@@ -259,16 +259,18 @@ xlong:
 		    tm1->tm_mday :
 		    0;
 		cal(i + 1, y, str, 72, cur, MONDAY_FLAG);
+
 		cur = (i + 2 == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
 		    tm1->tm_mday :
 		    0;
 		cal(i + 2, y, str + 23, 72, cur, MONDAY_FLAG);
+
 		cur = (i + 3 == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
 		    tm1->tm_mday :
 		    0;
 		cal(i + 3, y, str + 46, 72, cur, MONDAY_FLAG);
 
-		for (j = 0; j < 6 * 72; j += 72)
+		for (j = 0; j < 432; j += 72)
 			pstr(str + j, 72);
 	}
 
