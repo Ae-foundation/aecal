@@ -63,7 +63,6 @@ pstr(char *str, int n)
 
 	n = i;
 	for (i = 0; i < n; i++) {
-
 #if CURRENT_DAY_FLAG == 1
 		/* highlighting bit 0x80 */
 		if (str[i] & 0x80) {
@@ -81,6 +80,7 @@ pstr(char *str, int n)
 			continue;
 		}
 #endif
+
 		putchar(str[i] & 0x3f);
 	}
 	putchar('\n');
