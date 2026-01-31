@@ -63,24 +63,25 @@ pstr(char *str, int n)
 
 	n = i;
 	for (i = 0; i < n; i++) {
-		/* highlighting bit 0x80 */
-		if (str[i] & 0x80)
+
 #if CURRENT_DAY_FLAG == 1
+		/* highlighting bit 0x80 */
+		if (str[i] & 0x80) {
 			printf("\x1b" ANSI_HIGHLIGHT "%c\x1b[0m",
 			    (str[i] & 0x3f));
-#else
-			printf("%c", (str[i] & 0x3f));
+			continue;
+		}
 #endif
-		/* highlighting bit 0x40 */
-		else if (str[i] & 0x40)
+
 #if DAYOFF_FLAG == 1
+		/* highlighting bit 0x40 */
+		if (str[i] & 0x40) {
 			printf("\x1b" ANSI_HIGHLIGHT_DO "%c\x1b[0m",
 			    (str[i] & 0x3f));
-#else
-			printf("%c", (str[i] & 0x3f));
+			continue;
+		}
 #endif
-		else
-			putchar(str[i]);
+		putchar(str[i] & 0x3f);
 	}
 	putchar('\n');
 }
