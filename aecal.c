@@ -16,11 +16,9 @@ number(char *str)
 	int n = 0;
 	u_char c;
 
-	while ((c = *s++)) {
+	for (; (c = *s++); n = n * 10 + c - '0')
 		if (!isdigit(c))
 			return 0;
-		n = n * 10 + c - '0';
-	}
 
 	return n;
 }
@@ -181,29 +179,30 @@ main(int c, char **av)
 		"December",
 	};
 	char str[432] = { 0 };
-	char dayw[64] = { 0 };
-	int y, i, j, m, cur;
+	int y, i, j, m;
 
+	char dayw[64] = {
 #if MONDAY_FLAG == 1
-	strcpy(dayw, " M Tu  W Th  F  S  S");
+	" M Tu  W Th  F  S  S"
 #else
-	strcpy(dayw, " S  M Tu  W Th  F  S");
+	" S  M Tu  W Th  F  S"
 #endif
+	};
 
 	time_t t = time(NULL);
 	struct tm *tm1 = localtime(&t);
 
-	if (c == 2 &&
-	    (!strcmp(av[1], "help") || !strcmp(av[1], "-h") ||
-		!strcmp(av[1], "h"))) {
-		fprintf(stderr, "Usage: %s year [mouth]\n", av[0]);
-		return 0;
-	}
-	if (c == 2 &&
-	    (!strcmp(av[1], "year") || !strcmp(av[1], "-y") ||
-		!strcmp(av[1], "y"))) {
-		y = tm1->tm_year + 1900;
-		goto xlong;
+	if (c == 2) {
+		if ((!strcmp(av[1], "help") || !strcmp(av[1], "-h") ||
+			!strcmp(av[1], "h"))) {
+			fprintf(stderr, "Usage: %s year [mouth]\n", av[0]);
+			return 0;
+		}
+		if ((!strcmp(av[1], "year") || !strcmp(av[1], "-y") ||
+			!strcmp(av[1], "y"))) {
+			y = tm1->tm_year + 1900;
+			goto xlong;
+		}
 	}
 
 	if (c < 2) {
@@ -231,10 +230,12 @@ xshort:
 	printf("    %s %u\n", smon[m - 1], y);
 	printf("%s\n", dayw);
 
-	cur = (m == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
-	    tm1->tm_mday :
-	    0;
-	cal(m, y, str, 24, cur, MONDAY_FLAG);
+#define CURRENTDAY(m, y, tm)                                        \
+	(((m) == (tm)->tm_mon + 1 && (y) == (tm)->tm_year + 1900) ? \
+		(tm)->tm_mday :                                     \
+		0)
+
+	cal(m, y, str, 24, CURRENTDAY(m, y, tm1), MONDAY_FLAG);
 
 	for (i = 0; i < 6 * 24; i += 24)
 		pstr(str + i, 24);
@@ -255,20 +256,11 @@ xlong:
 		printf("		       %.3s\n", smon[i + 2]);
 		printf("%s   %s   %s\n", dayw, dayw, dayw);
 
-		cur = (i + 1 == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
-		    tm1->tm_mday :
-		    0;
-		cal(i + 1, y, str, 72, cur, MONDAY_FLAG);
-
-		cur = (i + 2 == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
-		    tm1->tm_mday :
-		    0;
-		cal(i + 2, y, str + 23, 72, cur, MONDAY_FLAG);
-
-		cur = (i + 3 == tm1->tm_mon + 1 && y == tm1->tm_year + 1900) ?
-		    tm1->tm_mday :
-		    0;
-		cal(i + 3, y, str + 46, 72, cur, MONDAY_FLAG);
+		cal(i + 1, y, str, 72, CURRENTDAY(i + 1, y, tm1), MONDAY_FLAG);
+		cal(i + 2, y, str + 23, 72, CURRENTDAY(i + 2, y, tm1),
+		    MONDAY_FLAG);
+		cal(i + 3, y, str + 46, 72, CURRENTDAY(i + 3, y, tm1),
+		    MONDAY_FLAG);
 
 		for (j = 0; j < 432; j += 72)
 			pstr(str + j, 72);
