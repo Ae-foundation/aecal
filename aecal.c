@@ -67,9 +67,17 @@ pstr(char *str, int n)
 		if (str[i] & 0x80)
 #if CURRENT_DAY_FLAG == 1
 			printf("\x1b" ANSI_HIGHLIGHT "%c\x1b[0m",
-			    (str[i] & 0x7f));
+			    (str[i] & 0x3f));
 #else
-			printf("%c", (str[i] & 0x7f));
+			printf("%c", (str[i] & 0x3f));
+#endif
+		/* highlighting bit 0x40 */
+		else if (str[i] & 0x40)
+#if DAYOFF_FLAG == 1
+			printf("\x1b" ANSI_HIGHLIGHT_DO "%c\x1b[0m",
+			    (str[i] & 0x3f));
+#else
+			printf("%c", (str[i] & 0x3f));
 #endif
 		else
 			putchar(str[i]);
@@ -153,30 +161,28 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 	s += 3 * d;
 
 	for (i = 1; i <= mon[m]; i++) {
+		int wb = 0, cb = 0;
+
 		if (i == 3 && mon[m] == 19) {
 			i += 11;
 			mon[m] += 11;
 		}
 
+		/* 0x80 bit for highlighting current day */
+		if (i == cur)
+			cb = 0x80;
+
+		/* 0x40 bit for highlighting day off */
+		if (mflg)
+			wb = (d >= 5) ? 0x40 : wb;
+		else
+			wb = (d == 0 || d == 6) ? 0x40 : wb;
+
+		/* master processing */
 		if (i > 9)
-			*s = i / 10 + '0';
-
-		/* 0x80 bit for highlighting */
-		if (i == cur) {
-			if (i < 9)
-				*s = ' ';
-			else
-				*s |= 0x80;
-		}
-
-		*++s = i % 10 + '0';
-
-		if (i == cur) {
-			*s |= 0x80;
-			*++s = ' ';
-			s++;
-		} else
-			s += 2;
+			*s = i / 10 + '0' | cb | wb;
+		*++s = i % 10 + '0' | cb | wb;
+		s += 2;
 
 		if (++d == 7) {
 			d = 0;
