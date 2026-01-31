@@ -173,10 +173,8 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 			cb = 0x80;
 
 		/* 0x40 bit for highlighting day off */
-		if (mflg)
-			wb = (d >= 5) ? 0x40 : wb;
-		else
-			wb = (d == 0 || d == 6) ? 0x40 : wb;
+		if ((mflg && d >= 5) || (!mflg && (d == 0 || d == 6)))
+			wb = 0x40;
 
 		/* master processing */
 		if (i > 9)
@@ -214,9 +212,9 @@ main(int c, char **av)
 
 	char dayw[64] = {
 #if MONDAY_FLAG == 1
-	" M Tu  W Th  F  S  S"
+		" M Tu  W Th  F  S  S"
 #else
-	" S  M Tu  W Th  F  S"
+		" S  M Tu  W Th  F  S"
 #endif
 	};
 
