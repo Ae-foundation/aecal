@@ -213,9 +213,9 @@ main(int c, char **av)
 
 	char dayw[64] = {
 #if MONDAY_FLAG == 1
-		" M Tu  W Th  F  S  S"
+		"Mo Tu We Th Fr Sa Su"
 #else
-		" S  M Tu  W Th  F  S"
+		"Su Mo Tu We Th Fr Sa"
 #endif
 	};
 
