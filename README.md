@@ -29,8 +29,14 @@ will display the entire current year
   ./aecal year
 
 display the date of Easter
-  ./aecal -e
-  ./aecal -e 555    for the year 555
+  for current year
+      ./aecal -e
+      ./aecal e
+      ./aecal easter
+  for the year 555
+      ./aecal -e 555    
+      ./aecal e 555
+      ./aecal easter 555
 
 display the help menu
   ./aecal -h
