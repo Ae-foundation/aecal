@@ -14,10 +14,9 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
-
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,12 +28,14 @@ static inline int
 number(char *str)
 {
 	char *s = str;
+	uint8_t c;
 	int n = 0;
-	u_char c;
 
-	for (; (c = *s++); n = n * 10 + c - '0')
+	while ((c = *s++)) {
 		if (!isdigit(c))
 			return 0;
+		n = n * 10 + c - '0';
+	}
 
 	return n;
 }
@@ -48,11 +49,13 @@ pstr(char *str, int n)
 	while (i--)
 		if (*s++ == 0)
 			*(s - 1) = ' ';
-
-	for (i = n + 1; i-- && *--s == ' ';)
+	i = n + 1;
+	while (i-- && *(--s) == ' ')
 		;
-
 	n = i;
+	if (n <= 0)
+		return;
+
 	for (i = 0; i < n; i++) {
 #if CURRENT_DAY_FLAG == 1
 		/* highlighting bit 0x80 */
@@ -109,6 +112,55 @@ jan1(int yr)
 		d += 3;
 
 	return (d % 7);
+}
+
+static inline void
+easterg(int year, bool orthodox, struct tm *date)
+{
+	int a, b, c, dval, e, f, g, h, i, k, l, n, day, month;
+
+	if (!date)
+		return;
+	if (year < 1583)
+		orthodox = 1;
+
+	if (orthodox) {
+		a = year % 19;
+		b = year % 4;
+		c = year % 7;
+		dval = (19 * a + 15) % 30;
+		e = (2 * b + 4 * c + 6 * dval + 6) % 7;
+		day = 22 + dval + e;
+		day += year / 100 - year / 400 - 2;
+
+		if (day > 61) {
+			month = 5;
+			day -= 61;
+		} else if (day > 31) {
+			month = 4;
+			day -= 31;
+		} else
+			month = 3;
+	} else {
+		a = year % 19;
+		b = year / 100;
+		c = year % 100;
+		dval = b / 4;
+		e = b % 4;
+		f = (b + 8) / 25;
+		g = (b - f + 1) / 3;
+		h = (19 * a + b - dval - g + 15) % 30;
+		i = c / 4;
+		k = c % 4;
+		l = (32 + 2 * e + 2 * i - h - k) % 7;
+		n = (a + 11 * h + 22 * l) / 451;
+		month = (h + l - 7 * n + 114) / 31;
+		day = ((h + l - 7 * n + 114) % 31) + 1;
+	}
+
+	date->tm_year = year - 1900;
+	date->tm_mon = month - 1;
+	date->tm_mday = day;
 }
 
 static void
@@ -204,32 +256,61 @@ main(int c, char **av)
 
 	char dayw[64] = {
 #if MONDAY_FLAG == 1
+#if OLD_DAY_NAMES == 1
+		" M Tu  W Th  F  S  S"
+#else
 		"Mo Tu We Th Fr Sa Su"
+#endif
+#else
+#if OLD_DAY_NAMES == 1
+		" S  M Tu  W Th  F  S"
 #else
 		"Su Mo Tu We Th Fr Sa"
+#endif
 #endif
 	};
 
 	time_t t = time(NULL);
 	struct tm *tm1 = localtime(&t);
 
-	if (c == 2) {
+	if (c > 1) {
 		if ((!strcmp(av[1], "help") || !strcmp(av[1], "-h") ||
 			!strcmp(av[1], "h"))) {
-			fprintf(stderr, "Usage: %s year [mouth]\n", av[0]);
+			fprintf(stderr, "Usage: %s\n", av[0]);
+			fprintf(stderr, "       %s year [mouth]\n", av[0]);
+			fprintf(stderr, "       %s -e [year]\n", av[0]);
+			fprintf(stderr, "       %s -y\n", av[0]);
+			fprintf(stderr, "       %s -h\n", av[0]);
 			return 0;
-		}
-		if ((!strcmp(av[1], "year") || !strcmp(av[1], "-y") ||
-			!strcmp(av[1], "y"))) {
+		} else if ((!strcmp(av[1], "year") || !strcmp(av[1], "-y") ||
+			       !strcmp(av[1], "y"))) {
 			y = tm1->tm_year + 1900;
 			goto xlong;
-		}
-	}
+		} else if ((!strcmp(av[1], "easter") || !strcmp(av[1], "-e") ||
+			       !strcmp(av[1], "e"))) {
+			struct tm tm = { 0 };
 
-	if (c < 2) {
+			if (c == 3) {
+				y = number(av[2]);
+				if (y < 1 || y > 9999)
+					goto badarg;
+			} else
+				y = tm1->tm_year + 1900;
+
+			i = 1;
+		eastern:
+			easterg(y, i, &tm);
+			strftime(str, sizeof(str), "%B %e %Y", &tm);
+			printf("%s %s\n", str, (i) ? "Catholic" : "Orthodox");
+
+			if (i--)
+				goto eastern;
+
+			return 0;
+		}
+	} else {
 		m = tm1->tm_mon + 1;
 		y = tm1->tm_year + 1900;
-
 		goto xshort;
 	}
 
@@ -249,7 +330,7 @@ main(int c, char **av)
 	 */
 xshort:
 	printf("    %s %u\n", smon[m - 1], y);
-	printf("%s\n", dayw);
+	puts(dayw);
 
 #define CURRENTDAY(m, y, tm)                                        \
 	(((m) == (tm)->tm_mon + 1 && (y) == (tm)->tm_year + 1900) ? \
@@ -261,14 +342,14 @@ xshort:
 	for (i = 0; i < 6 * 24; i += 24)
 		pstr(str + i, 24);
 
+	putchar('\n');
 	return 0;
 
 	/*
 	 * print out complete year
 	 */
 xlong:
-	printf("\t\t\t\t%u\n", y);
-	putchar('\n');
+	printf("\t\t\t\t%u\n\n", y);
 
 	for (i = 0; i < 12; i += 3) {
 		memset(str, 0, 432);
@@ -285,6 +366,8 @@ xlong:
 
 		for (j = 0; j < 432; j += 72)
 			pstr(str + j, 72);
+
+		putchar('\n');
 	}
 
 	return 0;
