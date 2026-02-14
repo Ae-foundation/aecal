@@ -23,4 +23,5 @@
 #define ANSI_HIGHLIGHT_DO "[0;32m"	/* ansi code for hightlight day off */
 #define MONDAY_FLAG 1			/* first week day is monday? */
 #define OLD_DAY_NAMES 0			/* Use "S  M Tu  W Th  F  S"? */
+
 #endif
