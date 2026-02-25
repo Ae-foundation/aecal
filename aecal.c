@@ -192,7 +192,7 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 		30,
 		31,
 	};
-	int d = jan1(y), i, n;
+	int d = jan1(y), i, n, dw = d;
 	uint8_t flag;
 	char *s = p;
 
@@ -227,11 +227,18 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 			/* 0x80 bit for highlighting current day */
 			flag = 0x80;
 		else {
+			if (mflg)
+				dw = (d + 1) % 7;
+			else
+				dw = d;
+
 			/* 0xc0 bit for highlighting holidays */
 			for (n = 0; n < sizeof(hdays) / sizeof(*hdays); n++)
-				if ((hdays[n].d == i || hdays[n].d == 0) &&
-				    (hdays[n].m == m || hdays[n].m == 0) &&
-				    (hdays[n].y == y || hdays[n].y == 0))
+				if ((hdays[n].d == i || hdays[n].d == -1) &&
+				    (hdays[n].m == m || hdays[n].m == -1) &&
+				    (hdays[n].y == y || hdays[n].y == -1) &&
+				    (hdays[n].dayw == dw ||
+					hdays[n].dayw == -1))
 					flag = 0xc0; /* 0x80 + 0x40 */
 
 			/* 0x40 bit for highlighting day off */

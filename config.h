@@ -28,8 +28,9 @@
 
 struct __holiday {
 	int y, m, d; /* year, mouth, day */
+	int dayw;    /* day of the week; 0-6 */
 
-	/* array for holidays; 0 = any year/mouth/day */
-} hdays[] = { { 0, 1, 1 }, { 0, 9, 1 } };
+	/* array for holidays; -1 = any year/mouth/day/dayw */
+} hdays[] = { { -1, 1, 1, -1 }, { -1, 9, 1, -1 }, { -1, -1, 13, 5 } };
 
 #endif
