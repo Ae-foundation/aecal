@@ -43,7 +43,8 @@ number(char *str)
 static void
 pstr(char *str, int n)
 {
-	char *s = str;
+	char *s = str, c;
+	uint8_t flag;
 	int i = n;
 
 	while (i--)
@@ -56,26 +57,36 @@ pstr(char *str, int n)
 	if (n <= 0)
 		return;
 
+	(void)flag;
 	for (i = 0; i < n; i++) {
+		c = str[i] & 0x3f;
+		flag = str[i] & 0xc0;
+
 #if CURRENT_DAY_FLAG == 1
 		/* highlighting bit 0x80 */
-		if (str[i] & 0x80) {
-			printf("\x1b" ANSI_HIGHLIGHT "%c\x1b[0m",
-			    (str[i] & 0x3f));
+		if (flag == 0x80) {
+			printf("\x1b" ANSI_HIGHLIGHT "%c\x1b[0m", c);
+			continue;
+		}
+#endif
+
+#if HOLIDAY_DAY_FLAG == 1
+		/* highlighting bit 0xc0 */
+		if (flag == 0xc0) {
+			printf("\x1b" ANSI_HIGHLIGHT_HD "%c\x1b[0m", c);
 			continue;
 		}
 #endif
 
 #if DAYOFF_FLAG == 1
 		/* highlighting bit 0x40 */
-		if (str[i] & 0x40) {
-			printf("\x1b" ANSI_HIGHLIGHT_DO "%c\x1b[0m",
-			    (str[i] & 0x3f));
+		if (flag == 0x40) {
+			printf("\x1b" ANSI_HIGHLIGHT_DO "%c\x1b[0m", c);
 			continue;
 		}
 #endif
 
-		putchar(str[i] & 0x3f);
+		putchar(c);
 	}
 	putchar('\n');
 }
@@ -181,7 +192,8 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 		30,
 		31,
 	};
-	int d = jan1(y), i;
+	int d = jan1(y), i, n;
+	uint8_t flag = 0;
 	char *s = p;
 
 	switch ((jan1(y + 1) + 7 - d) % 7) {
@@ -205,25 +217,33 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 	s += 3 * d;
 
 	for (i = 1; i <= mon[m]; i++) {
-		int wb = 0, cb = 0;
-
 		if (i == 3 && mon[m] == 19) {
 			i += 11;
 			mon[m] += 11;
 		}
 
-		/* 0x80 bit for highlighting current day */
+		flag = 0;
 		if (i == cur)
-			cb = 0x80;
+			/* 0x80 bit for highlighting current day */
+			flag = 0x80;
+		else {
+			/* 0xc0 bit for highlighting holidays */
+			for (n = 0; n < sizeof(hdays) / sizeof(*hdays); n++)
+				if ((hdays[n].d == i || hdays[n].d == 0) &&
+				    (hdays[n].m == m || hdays[n].m == 0) &&
+				    (hdays[n].y == y || hdays[n].y == 0))
+					flag = 0xc0; /* 0x80 + 0x40 */
 
-		/* 0x40 bit for highlighting day off */
-		if ((mflg && d >= 5) || (!mflg && (d == 0 || d == 6)))
-			wb = 0x40;
+			/* 0x40 bit for highlighting day off */
+			if (!flag &&
+			    ((mflg && d >= 5) || (!mflg && (d == 0 || d == 6))))
+				flag = 0x40;
+		}
 
 		/* master processing */
 		if (i > 9)
-			*s = i / 10 + '0' | cb | wb;
-		*++s = i % 10 + '0' | cb | wb;
+			*s = i / 10 + '0' | flag;
+		*++s = i % 10 + '0' | flag;
 		s += 2;
 
 		if (++d == 7) {

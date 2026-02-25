@@ -17,11 +17,19 @@
 #ifndef __AECAL_CONFIG_H
 #define __AECAL_CONFIG_H
 
-#define CURRENT_DAY_FLAG 1		/* highlight current day? */
-#define ANSI_HIGHLIGHT "[1;5;41;37m"	/* ansi code for hightlight */
-#define DAYOFF_FLAG 1			/* highlight day off days? */
+#define CURRENT_DAY_FLAG  1		/* highlight current day? */
+#define ANSI_HIGHLIGHT	  "[1;5;41;37m" /* ansi code for hightlight */
+#define DAYOFF_FLAG	  1		/* highlight day off days? */
 #define ANSI_HIGHLIGHT_DO "[0;32m"	/* ansi code for hightlight day off */
-#define MONDAY_FLAG 1			/* first week day is monday? */
-#define OLD_DAY_NAMES 0			/* Use "S  M Tu  W Th  F  S"? */
+#define MONDAY_FLAG	  1		/* first week day is monday? */
+#define OLD_DAY_NAMES	  0		/* Use "S  M Tu  W Th  F  S"? */
+#define HOLIDAY_DAY_FLAG  1		/* highlight holidays? */
+#define ANSI_HIGHLIGHT_HD "[1;4;3;36m"	/* ansi code for hightlight */
+
+struct __holiday {
+	int y, m, d; /* year, mouth, day */
+
+	/* array for holidays; 0 = any year/mouth/day */
+} hdays[] = { { 0, 1, 1 }, { 0, 9, 1 } };
 
 #endif
