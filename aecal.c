@@ -193,7 +193,7 @@ cal(int m, int y, char *p, int w, int cur, bool mflg)
 		31,
 	};
 	int d = jan1(y), i, n;
-	uint8_t flag = 0;
+	uint8_t flag;
 	char *s = p;
 
 	switch ((jan1(y + 1) + 7 - d) % 7) {
